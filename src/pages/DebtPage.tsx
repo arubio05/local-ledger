@@ -13,11 +13,13 @@ import {
   TrendingDown,
   WalletCards,
   X,
+  HandCoins,
 } from "lucide-react";
 
 import type { Debt } from "../types";
 import { MasterDetailLayout } from "../components/layout/MasterDetailLayout";
 import { useModal } from "../components/modal/ModalContext";
+import { DebtPaymentDialog } from "../components/debt/DebtPaymentDialog";
 
 type Props = {
   debts: Debt[];
@@ -115,6 +117,8 @@ export function DebtPage({
 }: Props) {
   const { openConfirm } = useModal();
   const [search, setSearch] = useState("");
+  const [paymentDebt, setPaymentDebt] = useState<Debt | null>(null);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const totalDebt = useMemo(
     () => debts.reduce((sum, debt) => sum + debt.current_balance, 0),
@@ -164,6 +168,16 @@ export function DebtPage({
     );
   }, [debts, search]);
 
+  function openPaymentDialog(debt: Debt) {
+    setPaymentDebt(debt);
+    setIsPaymentDialogOpen(true);
+  }
+
+  function closePaymentDialog() {
+    setIsPaymentDialogOpen(false);
+    setPaymentDebt(null);
+  }
+
   function beginEdit(debt: Debt) {
     setEditingDebtId(debt.id);
     setDebtName(debt.name);
@@ -177,364 +191,396 @@ export function DebtPage({
   }
 
   return (
-    <MasterDetailLayout
-      title="Debt"
-      left={
-        <section className="finance-editor">
-          <header className="finance-editor-header">
-            <div className="finance-editor-icon debt">
-              {editingDebtId ? <Edit3 size={20} /> : <Plus size={20} />}
+    <>
+      <MasterDetailLayout
+        title="Debt"
+        left={
+          <section className="finance-editor">
+            <header className="finance-editor-header">
+              <div className="finance-editor-icon debt">
+                {editingDebtId ? <Edit3 size={20} /> : <Plus size={20} />}
+              </div>
+
+              <div>
+                <h3>{editingDebtId ? "Edit debt" : "Add a debt"}</h3>
+                <p>Track balances, rates, and your payoff plan.</p>
+              </div>
+            </header>
+
+            <div className="finance-form">
+              <label className="finance-field finance-field-wide">
+                <span>Debt name</span>
+                <div className="finance-input-icon">
+                  <Landmark size={16} />
+                  <input
+                    type="text"
+                    placeholder="Personal loan"
+                    value={debtName}
+                    onChange={(event) => setDebtName(event.target.value)}
+                  />
+                </div>
+              </label>
+
+              <label className="finance-field">
+                <span>Original balance</span>
+                <div className="finance-input-icon">
+                  <DollarSign size={16} />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="25000"
+                    value={debtOriginalBalance}
+                    onChange={(event) =>
+                      setDebtOriginalBalance(event.target.value)
+                    }
+                  />
+                </div>
+              </label>
+
+              <label className="finance-field">
+                <span>Current balance</span>
+                <div className="finance-input-icon">
+                  <WalletCards size={16} />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="25000"
+                    value={debtCurrentBalance}
+                    onChange={(event) =>
+                      setDebtCurrentBalance(event.target.value)
+                    }
+                  />
+                </div>
+              </label>
+
+              <label className="finance-field">
+                <span>APR</span>
+                <div className="finance-input-icon">
+                  <Gauge size={16} />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="11.75"
+                    value={debtInterestRate}
+                    onChange={(event) =>
+                      setDebtInterestRate(event.target.value)
+                    }
+                  />
+                </div>
+              </label>
+
+              <label className="finance-field">
+                <span>Minimum payment</span>
+                <div className="finance-input-icon">
+                  <CreditCard size={16} />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="565"
+                    value={debtMinimumPayment}
+                    onChange={(event) =>
+                      setDebtMinimumPayment(event.target.value)
+                    }
+                  />
+                </div>
+              </label>
+
+              <label className="finance-field">
+                <span>Extra payment</span>
+                <div className="finance-input-icon">
+                  <TrendingDown size={16} />
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="200"
+                    value={debtExtraPayment}
+                    onChange={(event) =>
+                      setDebtExtraPayment(event.target.value)
+                    }
+                  />
+                </div>
+              </label>
+
+              <label className="finance-field">
+                <span>Next due date</span>
+                <div className="finance-input-icon">
+                  <CalendarDays size={16} />
+                  <input
+                    type="date"
+                    value={debtDueDate}
+                    onChange={(event) => setDebtDueDate(event.target.value)}
+                  />
+                </div>
+              </label>
+
+              <label className="finance-field finance-field-wide">
+                <span>Notes</span>
+                <textarea
+                  rows={3}
+                  placeholder="Optional notes about this debt"
+                  value={debtNotes}
+                  onChange={(event) => setDebtNotes(event.target.value)}
+                />
+              </label>
             </div>
 
-            <div>
-              <h3>{editingDebtId ? "Edit debt" : "Add a debt"}</h3>
-              <p>Track balances, rates, and your payoff plan.</p>
-            </div>
-          </header>
-
-          <div className="finance-form">
-            <label className="finance-field finance-field-wide">
-              <span>Debt name</span>
-              <div className="finance-input-icon">
-                <Landmark size={16} />
-                <input
-                  type="text"
-                  placeholder="Personal loan"
-                  value={debtName}
-                  onChange={(event) => setDebtName(event.target.value)}
-                />
-              </div>
-            </label>
-
-            <label className="finance-field">
-              <span>Original balance</span>
-              <div className="finance-input-icon">
-                <DollarSign size={16} />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="25000"
-                  value={debtOriginalBalance}
-                  onChange={(event) =>
-                    setDebtOriginalBalance(event.target.value)
-                  }
-                />
-              </div>
-            </label>
-
-            <label className="finance-field">
-              <span>Current balance</span>
-              <div className="finance-input-icon">
-                <WalletCards size={16} />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="25000"
-                  value={debtCurrentBalance}
-                  onChange={(event) =>
-                    setDebtCurrentBalance(event.target.value)
-                  }
-                />
-              </div>
-            </label>
-
-            <label className="finance-field">
-              <span>APR</span>
-              <div className="finance-input-icon">
-                <Gauge size={16} />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="11.75"
-                  value={debtInterestRate}
-                  onChange={(event) => setDebtInterestRate(event.target.value)}
-                />
-              </div>
-            </label>
-
-            <label className="finance-field">
-              <span>Minimum payment</span>
-              <div className="finance-input-icon">
-                <CreditCard size={16} />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="565"
-                  value={debtMinimumPayment}
-                  onChange={(event) =>
-                    setDebtMinimumPayment(event.target.value)
-                  }
-                />
-              </div>
-            </label>
-
-            <label className="finance-field">
-              <span>Extra payment</span>
-              <div className="finance-input-icon">
-                <TrendingDown size={16} />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="200"
-                  value={debtExtraPayment}
-                  onChange={(event) => setDebtExtraPayment(event.target.value)}
-                />
-              </div>
-            </label>
-
-            <label className="finance-field">
-              <span>Next due date</span>
-              <div className="finance-input-icon">
-                <CalendarDays size={16} />
-                <input
-                  type="date"
-                  value={debtDueDate}
-                  onChange={(event) => setDebtDueDate(event.target.value)}
-                />
-              </div>
-            </label>
-
-            <label className="finance-field finance-field-wide">
-              <span>Notes</span>
-              <textarea
-                rows={3}
-                placeholder="Optional notes about this debt"
-                value={debtNotes}
-                onChange={(event) => setDebtNotes(event.target.value)}
-              />
-            </label>
-          </div>
-
-          <div className="finance-form-actions">
-            <button
-              type="button"
-              disabled={isSavingDebt}
-              onClick={() => {
-                if (editingDebtId) {
-                  updateDebt();
-                } else {
-                  addDebt();
-                }
-              }}
-            >
-              {editingDebtId ? <Edit3 size={16} /> : <Plus size={16} />}
-              {isSavingDebt
-                ? "Saving…"
-                : editingDebtId
-                  ? "Save changes"
-                  : "Add debt"}
-            </button>
-
-            {editingDebtId && (
+            <div className="finance-form-actions">
               <button
                 type="button"
-                className="secondary-button"
                 disabled={isSavingDebt}
-                onClick={resetDebtForm}
+                onClick={() => {
+                  if (editingDebtId) {
+                    updateDebt();
+                  } else {
+                    addDebt();
+                  }
+                }}
               >
-                <X size={16} />
-                Cancel
+                {editingDebtId ? <Edit3 size={16} /> : <Plus size={16} />}
+                {isSavingDebt
+                  ? "Saving…"
+                  : editingDebtId
+                    ? "Save changes"
+                    : "Add debt"}
               </button>
-            )}
-          </div>
-        </section>
-      }
-      right={
-        <section className="finance-overview">
-          <div className="finance-summary-grid">
-            <article className="finance-summary-card danger">
-              <div className="finance-summary-icon">
-                <ShieldAlert size={20} />
-              </div>
-              <div>
-                <span>Total debt</span>
-                <strong>{formatMoney(totalDebt)}</strong>
-                <small>
-                  Across {debts.length} account
-                  {debts.length === 1 ? "" : "s"}
-                </small>
-              </div>
-            </article>
 
-            <article className="finance-summary-card">
-              <div className="finance-summary-icon">
-                <CreditCard size={20} />
-              </div>
-              <div>
-                <span>Monthly payments</span>
-                <strong>{formatMoney(monthlyPayments)}</strong>
-                <small>Minimum plus extra</small>
-              </div>
-            </article>
+              {editingDebtId && (
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={isSavingDebt}
+                  onClick={resetDebtForm}
+                >
+                  <X size={16} />
+                  Cancel
+                </button>
+              )}
+            </div>
+          </section>
+        }
+        right={
+          <section className="finance-overview">
+            <div className="finance-summary-grid">
+              <article className="finance-summary-card danger">
+                <div className="finance-summary-icon">
+                  <ShieldAlert size={20} />
+                </div>
+                <div>
+                  <span>Total debt</span>
+                  <strong>{formatMoney(totalDebt)}</strong>
+                  <small>
+                    Across {debts.length} account
+                    {debts.length === 1 ? "" : "s"}
+                  </small>
+                </div>
+              </article>
 
-            <article className="finance-summary-card">
-              <div className="finance-summary-icon">
-                <Gauge size={20} />
-              </div>
-              <div>
-                <span>Weighted APR</span>
-                <strong>{totalInterestWeighted.toFixed(2)}%</strong>
-                <small>Based on current balances</small>
-              </div>
-            </article>
+              <article className="finance-summary-card">
+                <div className="finance-summary-icon">
+                  <CreditCard size={20} />
+                </div>
+                <div>
+                  <span>Monthly payments</span>
+                  <strong>{formatMoney(monthlyPayments)}</strong>
+                  <small>Minimum plus extra</small>
+                </div>
+              </article>
 
-            <article className="finance-summary-card success">
-              <div className="finance-summary-icon">
-                <TrendingDown size={20} />
-              </div>
-              <div>
-                <span>Principal paid</span>
-                <strong>{formatMoney(totalPaid)}</strong>
-                <small>Progress so far</small>
-              </div>
-            </article>
-          </div>
+              <article className="finance-summary-card">
+                <div className="finance-summary-icon">
+                  <Gauge size={20} />
+                </div>
+                <div>
+                  <span>Weighted APR</span>
+                  <strong>{totalInterestWeighted.toFixed(2)}%</strong>
+                  <small>Based on current balances</small>
+                </div>
+              </article>
 
-          <div className="finance-list-toolbar">
-            <div>
-              <h3>Your debts</h3>
-              <p>Review balances and payoff progress.</p>
+              <article className="finance-summary-card success">
+                <div className="finance-summary-icon">
+                  <TrendingDown size={20} />
+                </div>
+                <div>
+                  <span>Principal paid</span>
+                  <strong>{formatMoney(totalPaid)}</strong>
+                  <small>Progress so far</small>
+                </div>
+              </article>
             </div>
 
-            <div className="finance-search">
-              <Search size={16} />
-              <input
-                type="search"
-                placeholder="Search debts"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </div>
-          </div>
+            <div className="finance-list-toolbar">
+              <div>
+                <h3>Your debts</h3>
+                <p>Review balances and payoff progress.</p>
+              </div>
 
-          {filteredDebts.length === 0 ? (
-            <div className="finance-empty-state">
-              <ShieldAlert size={28} />
-              <h3>
-                {debts.length === 0 ? "No debts yet" : "No matching debts"}
-              </h3>
-              <p>
-                {debts.length === 0
-                  ? "Add your first debt to start tracking your payoff."
-                  : "Try a different search term."}
-              </p>
+              <div className="finance-search">
+                <Search size={16} />
+                <input
+                  type="search"
+                  placeholder="Search debts"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </div>
             </div>
-          ) : (
-            <div className="finance-card-list">
-              {filteredDebts.map((debt) => {
-                const progress = getPayoffProgress(debt);
-                const payment = debt.minimum_payment + debt.extra_payment;
-                const isDeleting = deletingDebtId === debt.id;
 
-                return (
-                  <article key={debt.id} className="finance-item-card debt">
-                    <header className="finance-item-header">
-                      <div className="finance-item-title">
-                        <div className="finance-item-icon">
-                          <Landmark size={18} />
+            {filteredDebts.length === 0 ? (
+              <div className="finance-empty-state">
+                <ShieldAlert size={28} />
+                <h3>
+                  {debts.length === 0 ? "No debts yet" : "No matching debts"}
+                </h3>
+                <p>
+                  {debts.length === 0
+                    ? "Add your first debt to start tracking your payoff."
+                    : "Try a different search term."}
+                </p>
+              </div>
+            ) : (
+              <div className="finance-card-list">
+                {filteredDebts.map((debt) => {
+                  const progress = getPayoffProgress(debt);
+                  const payment = debt.minimum_payment + debt.extra_payment;
+                  const isDeleting = deletingDebtId === debt.id;
+
+                  return (
+                    <article key={debt.id} className="finance-item-card debt">
+                      <header className="finance-item-header">
+                        <div className="finance-item-title">
+                          <div className="finance-item-icon">
+                            <Landmark size={18} />
+                          </div>
+
+                          <div>
+                            <h4>{debt.name}</h4>
+                            <span>{debt.interest_rate.toFixed(2)}% APR</span>
+                          </div>
+                        </div>
+
+                        <div className="finance-item-actions">
+                          <button
+                            type="button"
+                            className="icon-button"
+                            aria-label={`Edit ${debt.name}`}
+                            onClick={() => beginEdit(debt)}
+                          >
+                            <Edit3 size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="icon-button success"
+                            aria-label={`Record payment for ${debt.name}`}
+                            title="Record Payment"
+                            onClick={() => openPaymentDialog(debt)}
+                          >
+                            <HandCoins size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            className="icon-button danger"
+                            aria-label={`Delete ${debt.name}`}
+                            disabled={isDeleting}
+                            onClick={() =>
+                              openConfirm({
+                                title: "Delete Debt",
+                                message: `Delete debt "${debt.name}"?`,
+                                confirmText: "Delete",
+                                danger: true,
+                                onConfirm: () => deleteDebt(debt.id),
+                              })
+                            }
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </header>
+
+                      <div className="finance-item-primary">
+                        <div>
+                          <span>Current balance</span>
+                          <strong>{formatMoney(debt.current_balance)}</strong>
                         </div>
 
                         <div>
-                          <h4>{debt.name}</h4>
-                          <span>{debt.interest_rate.toFixed(2)}% APR</span>
+                          <span>Monthly payment</span>
+                          <strong>{formatMoney(payment)}</strong>
+                        </div>
+
+                        <div>
+                          <span>Due</span>
+                          <strong>{formatDate(debt.due_date)}</strong>
                         </div>
                       </div>
 
-                      <div className="finance-item-actions">
-                        <button
-                          type="button"
-                          className="icon-button"
-                          aria-label={`Edit ${debt.name}`}
-                          onClick={() => beginEdit(debt)}
-                        >
-                          <Edit3 size={16} />
-                        </button>
+                      <div className="finance-progress-block">
+                        <div className="finance-progress-label">
+                          <span>{progress.toFixed(1)}% paid off</span>
+                          <span>
+                            {formatMoney(
+                              Math.max(
+                                debt.original_balance - debt.current_balance,
+                                0,
+                              ),
+                            )}{" "}
+                            paid
+                          </span>
+                        </div>
 
-                        <button
-                          type="button"
-                          className="icon-button danger"
-                          aria-label={`Delete ${debt.name}`}
-                          disabled={isDeleting}
-                          onClick={() =>
-                            openConfirm({
-                              title: "Delete Debt",
-                              message: `Delete debt "${debt.name}"?`,
-                              confirmText: "Delete",
-                              danger: true,
-                              onConfirm: () => deleteDebt(debt.id),
-                            })
-                          }
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </header>
+                        <div className="finance-progress-track">
+                          <div
+                            className="finance-progress-fill debt"
+                            style={{
+                              width: `${progress}%`,
+                            }}
+                          />
+                        </div>
 
-                    <div className="finance-item-primary">
-                      <div>
-                        <span>Current balance</span>
-                        <strong>{formatMoney(debt.current_balance)}</strong>
+                        <div className="finance-progress-meta">
+                          <span>
+                            Original {formatMoney(debt.original_balance)}
+                          </span>
+                          <span>
+                            Remaining {formatMoney(debt.current_balance)}
+                          </span>
+                        </div>
                       </div>
 
-                      <div>
-                        <span>Monthly payment</span>
-                        <strong>{formatMoney(payment)}</strong>
-                      </div>
-
-                      <div>
-                        <span>Due</span>
-                        <strong>{formatDate(debt.due_date)}</strong>
-                      </div>
-                    </div>
-
-                    <div className="finance-progress-block">
-                      <div className="finance-progress-label">
-                        <span>{progress.toFixed(1)}% paid off</span>
-                        <span>
-                          {formatMoney(
-                            Math.max(
-                              debt.original_balance - debt.current_balance,
-                              0,
-                            ),
-                          )}{" "}
-                          paid
-                        </span>
-                      </div>
-
-                      <div className="finance-progress-track">
-                        <div
-                          className="finance-progress-fill debt"
-                          style={{
-                            width: `${progress}%`,
-                          }}
-                        />
-                      </div>
-
-                      <div className="finance-progress-meta">
-                        <span>
-                          Original {formatMoney(debt.original_balance)}
-                        </span>
-                        <span>
-                          Remaining {formatMoney(debt.current_balance)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {debt.notes && (
-                      <p className="finance-item-notes">{debt.notes}</p>
-                    )}
-                  </article>
-                );
-              })}
-            </div>
-          )}
-        </section>
-      }
-    />
+                      {debt.notes && (
+                        <p className="finance-item-notes">{debt.notes}</p>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        }
+      />
+      <DebtPaymentDialog
+        isOpen={isPaymentDialogOpen}
+        debt={paymentDebt}
+        accounts={[]}
+        paymentAccountId=""
+        setPaymentAccountId={() => undefined}
+        paymentAmount=""
+        setPaymentAmount={() => undefined}
+        paymentDate=""
+        setPaymentDate={() => undefined}
+        paymentNotes=""
+        setPaymentNotes={() => undefined}
+        isRecordingPayment={false}
+        onClose={closePaymentDialog}
+        onSubmit={() => undefined}
+      />
+    </>
   );
 }

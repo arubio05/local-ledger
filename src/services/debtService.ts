@@ -97,6 +97,40 @@ export async function updateDebtById(
   return result;
 }
 
+export async function applyDebtPayment(debtId: number, paymentAmount: number) {
+  const db = await getDb();
+
+  const debts = await db.select<Debt[]>("SELECT * FROM debts WHERE id = $1", [
+    debtId,
+  ]);
+
+  if (debts.length === 0) {
+    throw new Error("Debt not found.");
+  }
+
+  const debt = debts[0];
+
+  const newBalance = Math.max(debt.current_balance - paymentAmount, 0);
+
+  const result = await db.execute(
+    `
+      UPDATE debts
+      SET current_balance = $1
+      WHERE id = $2
+    `,
+    [newBalance, debtId],
+  );
+
+  if (result.rowsAffected === 0) {
+    throw new Error("Unable to update debt.");
+  }
+
+  return {
+    previousBalance: debt.current_balance,
+    newBalance,
+  };
+}
+
 export async function deleteDebtById(id: number) {
   const db = await getDb();
 

@@ -13,9 +13,13 @@ export async function getDb() {
     )
   `);
 
-  await db.execute(`
+  await db
+    .execute(
+      `
     ALTER TABLE accounts ADD COLUMN balance REAL NOT NULL DEFAULT 0
-  `).catch(() => {});
+  `,
+    )
+    .catch(() => {});
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS transactions (
@@ -30,7 +34,7 @@ export async function getDb() {
       FOREIGN KEY (account_id) REFERENCES accounts(id)
     )
   `);
-  
+
   await db.execute(`
     CREATE TABLE IF NOT EXISTS budgets (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,16 +45,24 @@ export async function getDb() {
     )
   `);
 
-  await db.execute(`
+  await db
+    .execute(
+      `
     CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_month_category
     ON budgets (budget_month, category)
-  `).catch(() => {});
+  `,
+    )
+    .catch(() => {});
 
-  await db.execute(`
+  await db
+    .execute(
+      `
     UPDATE budgets
     SET budget_month = strftime('%Y-%m', 'now')
     WHERE budget_month IS NULL OR budget_month = ''
-  `).catch(() => {});
+  `,
+    )
+    .catch(() => {});
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS transfers (
@@ -77,9 +89,13 @@ export async function getDb() {
     )
   `);
 
-  await db.execute(`
+  await db
+    .execute(
+      `
     ALTER TABLE goals ADD COLUMN linked_account_id INTEGER
-  `).catch(() => {});
+  `,
+    )
+    .catch(() => {});
 
   await db.execute(`
     CREATE TABLE IF NOT EXISTS recurring_transactions (
@@ -103,11 +119,15 @@ export async function getDb() {
       transaction_count INTEGER NOT NULL DEFAULT 0
     )
   `);
-  
-  await db.execute(`
+
+  await db
+    .execute(
+      `
     ALTER TABLE transactions
     ADD COLUMN import_batch_id INTEGER
-  `).catch(() => {});
+  `,
+    )
+    .catch(() => {});
 
   await db.execute(`
   CREATE TABLE IF NOT EXISTS funds (
@@ -124,7 +144,7 @@ export async function getDb() {
   )
 `);
 
-await db.execute(`
+  await db.execute(`
   CREATE TABLE IF NOT EXISTS debts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -139,7 +159,37 @@ await db.execute(`
   )
 `);
 
-await db.execute(`
+  await db.execute(`
+CREATE TABLE IF NOT EXISTS debt_payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    debt_id INTEGER NOT NULL,
+
+    account_id INTEGER NOT NULL,
+
+    transaction_id INTEGER,
+
+    payment_date TEXT NOT NULL,
+
+    payment_amount REAL NOT NULL,
+
+    principal REAL NOT NULL,
+
+    interest REAL NOT NULL DEFAULT 0,
+
+    notes TEXT,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY(debt_id) REFERENCES debts(id),
+
+    FOREIGN KEY(account_id) REFERENCES accounts(id),
+
+    FOREIGN KEY(transaction_id) REFERENCES transactions(id)
+)
+`);
+
+  await db.execute(`
   CREATE TABLE IF NOT EXISTS budget_groups (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     budget_month TEXT NOT NULL,
@@ -149,12 +199,16 @@ await db.execute(`
   )
 `);
 
-await db.execute(`
+  await db
+    .execute(
+      `
   CREATE UNIQUE INDEX IF NOT EXISTS idx_budget_groups_month_name
   ON budget_groups (budget_month, name)
-`).catch(() => {});
+`,
+    )
+    .catch(() => {});
 
-await db.execute(`
+  await db.execute(`
   CREATE TABLE IF NOT EXISTS budget_items (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     group_id INTEGER NOT NULL,
@@ -167,21 +221,32 @@ await db.execute(`
   )
 `);
 
-
-await db.execute(`
+  await db
+    .execute(
+      `
   CREATE UNIQUE INDEX IF NOT EXISTS idx_budget_items_month_group_name
   ON budget_items (budget_month, group_id, name)
-`).catch(() => {});
+`,
+    )
+    .catch(() => {});
 
-await db.execute(`
+  await db
+    .execute(
+      `
   ALTER TABLE recurring_transactions
   ADD COLUMN autopay INTEGER NOT NULL DEFAULT 0
-`).catch(() => {});
+`,
+    )
+    .catch(() => {});
 
-await db.execute(`
+  await db
+    .execute(
+      `
   ALTER TABLE recurring_transactions
   ADD COLUMN auto_generate INTEGER NOT NULL DEFAULT 1
-`).catch(() => {});
+`,
+    )
+    .catch(() => {});
 
   return db;
 }

@@ -14,10 +14,21 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function getLocalDate() {
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export function useDebts() {
   const toast = useToast();
 
   const [debts, setDebts] = useState<Debt[]>([]);
+
   const [debtName, setDebtName] = useState("");
   const [originalBalance, setOriginalBalance] = useState("");
   const [currentBalance, setCurrentBalance] = useState("");
@@ -31,6 +42,13 @@ export function useDebts() {
   const [isSavingDebt, setIsSavingDebt] = useState(false);
   const [deletingDebtId, setDeletingDebtId] = useState<number | null>(null);
 
+  const [paymentDebtId, setPaymentDebtId] = useState<number | null>(null);
+  const [paymentAccountId, setPaymentAccountId] = useState("");
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentDate, setPaymentDate] = useState(getLocalDate());
+  const [paymentNotes, setPaymentNotes] = useState("");
+  const [isRecordingPayment, setIsRecordingPayment] = useState(false);
+
   function resetDebtForm() {
     setEditingDebtId(null);
     setDebtName("");
@@ -41,6 +59,36 @@ export function useDebts() {
     setExtraPayment("");
     setDebtDueDate("");
     setDebtNotes("");
+  }
+
+  function resetDebtPaymentForm() {
+    setPaymentDebtId(null);
+    setPaymentAccountId("");
+    setPaymentAmount("");
+    setPaymentDate(getLocalDate());
+    setPaymentNotes("");
+  }
+
+  function openDebtPayment(debt: Debt) {
+    setPaymentDebtId(debt.id);
+    setPaymentAccountId("");
+
+    const suggestedPayment = debt.minimum_payment + debt.extra_payment;
+
+    setPaymentAmount(
+      suggestedPayment > 0
+        ? String(Math.min(suggestedPayment, debt.current_balance))
+        : "",
+    );
+
+    setPaymentDate(getLocalDate());
+    setPaymentNotes("");
+  }
+
+  function closeDebtPayment() {
+    if (isRecordingPayment) return;
+
+    resetDebtPaymentForm();
   }
 
   async function loadDebts(showErrorToast = true) {
@@ -140,6 +188,7 @@ export function useDebts() {
     }
 
     const savedName = debtName.trim();
+
     const values = {
       original: Number(originalBalance),
       current: Number(currentBalance),
@@ -165,9 +214,12 @@ export function useDebts() {
         values.dueDate,
         values.notes,
       );
+
       await loadDebts(false);
 
-      if (typeof afterSave === "function") await afterSave();
+      if (typeof afterSave === "function") {
+        await afterSave();
+      }
 
       resetDebtForm();
 
@@ -201,6 +253,7 @@ export function useDebts() {
 
     const savedId = editingDebtId;
     const savedName = debtName.trim();
+
     const values = {
       original: Number(originalBalance),
       current: Number(currentBalance),
@@ -230,9 +283,12 @@ export function useDebts() {
         values.dueDate,
         values.notes,
       );
+
       await loadDebts(false);
 
-      if (typeof afterSave === "function") await afterSave();
+      if (typeof afterSave === "function") {
+        await afterSave();
+      }
 
       resetDebtForm();
 
@@ -255,9 +311,12 @@ export function useDebts() {
   }
 
   async function deleteDebt(id: number, afterSave?: () => Promise<void>) {
-    if (deletingDebtId === id || isSavingDebt) return;
+    if (deletingDebtId === id || isSavingDebt || isRecordingPayment) {
+      return;
+    }
 
     const debt = debts.find((item) => item.id === id);
+
     const toastId = toast.loading(
       "Deleting debt",
       debt ? `Removing ${debt.name}…` : "Removing debt…",
@@ -269,10 +328,16 @@ export function useDebts() {
       await deleteDebtById(id);
       await loadDebts(false);
 
-      if (typeof afterSave === "function") await afterSave();
+      if (typeof afterSave === "function") {
+        await afterSave();
+      }
 
       if (editingDebtId === id) {
         resetDebtForm();
+      }
+
+      if (paymentDebtId === id) {
+        resetDebtPaymentForm();
       }
 
       toast.updateToast(toastId, {
@@ -327,7 +392,30 @@ export function useDebts() {
     isSavingDebt,
     deletingDebtId,
 
+    paymentDebtId,
+    setPaymentDebtId,
+
+    paymentAccountId,
+    setPaymentAccountId,
+
+    paymentAmount,
+    setPaymentAmount,
+
+    paymentDate,
+    setPaymentDate,
+
+    paymentNotes,
+    setPaymentNotes,
+
+    isRecordingPayment,
+    setIsRecordingPayment,
+
     resetDebtForm,
+    resetDebtPaymentForm,
+
+    openDebtPayment,
+    closeDebtPayment,
+
     loadDebts,
     addDebt,
     updateDebt,

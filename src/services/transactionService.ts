@@ -18,7 +18,7 @@ export async function createTransaction(
   merchant: string,
   category: string,
   amount: number,
-  notes: string
+  notes: string,
 ) {
   const db = await getDb();
 
@@ -26,13 +26,67 @@ export async function createTransaction(
     `INSERT INTO transactions 
     (account_id, date, merchant, category, amount, notes)
     VALUES ($1, $2, $3, $4, $5, $6)`,
-    [accountId, date, merchant, category, amount, notes]
+    [accountId, date, merchant, category, amount, notes],
+  );
+
+  await db.execute("UPDATE accounts SET balance = balance + $1 WHERE id = $2", [
+    amount,
+    accountId,
+  ]);
+}
+
+export async function createDebtPaymentTransaction(
+  accountId: number,
+  debtName: string,
+  paymentDate: string,
+  amount: number,
+) {
+  const db = await getDb();
+
+  await db.execute(
+    `
+        INSERT INTO transactions
+        (
+            account_id,
+            date,
+            merchant,
+            category,
+            amount,
+            notes
+        )
+
+        VALUES
+        (
+            $1,
+            $2,
+            $3,
+            'Debt Payment',
+            $4,
+            ''
+        )
+        `,
+    [accountId, paymentDate, debtName, -Math.abs(amount)],
   );
 
   await db.execute(
-    "UPDATE accounts SET balance = balance + $1 WHERE id = $2",
-    [amount, accountId]
+    `
+        UPDATE accounts
+        SET balance = balance - $1
+        WHERE id = $2
+        `,
+    [amount, accountId],
   );
+
+  const rows = await db.select<{ id: number }[]>(
+    `
+        SELECT id
+        FROM transactions
+        ORDER BY id DESC
+        LIMIT 1
+        `,
+  );
+
+  return rows[0].id;
 }
 
 export async function deleteTransactionById(transaction: Transaction) {
@@ -40,10 +94,10 @@ export async function deleteTransactionById(transaction: Transaction) {
 
   await db.execute("DELETE FROM transactions WHERE id = $1", [transaction.id]);
 
-  await db.execute(
-    "UPDATE accounts SET balance = balance - $1 WHERE id = $2",
-    [transaction.amount, transaction.account_id]
-  );
+  await db.execute("UPDATE accounts SET balance = balance - $1 WHERE id = $2", [
+    transaction.amount,
+    transaction.account_id,
+  ]);
 }
 
 export async function updateTransactionById(
@@ -53,21 +107,21 @@ export async function updateTransactionById(
   merchant: string,
   category: string,
   amount: number,
-  notes: string
+  notes: string,
 ) {
   const db = await getDb();
 
   const oldRows = await db.select<Transaction[]>(
     "SELECT * FROM transactions WHERE id = $1",
-    [transactionId]
+    [transactionId],
   );
 
   const oldTransaction = oldRows[0];
 
-  await db.execute(
-    "UPDATE accounts SET balance = balance - $1 WHERE id = $2",
-    [oldTransaction.amount, oldTransaction.account_id]
-  );
+  await db.execute("UPDATE accounts SET balance = balance - $1 WHERE id = $2", [
+    oldTransaction.amount,
+    oldTransaction.account_id,
+  ]);
 
   await db.execute(
     `UPDATE transactions
@@ -78,11 +132,11 @@ export async function updateTransactionById(
          amount = $5,
          notes = $6
      WHERE id = $7`,
-    [accountId, date, merchant, category, amount, notes, transactionId]
+    [accountId, date, merchant, category, amount, notes, transactionId],
   );
 
-  await db.execute(
-    "UPDATE accounts SET balance = balance + $1 WHERE id = $2",
-    [amount, accountId]
-  );
+  await db.execute("UPDATE accounts SET balance = balance + $1 WHERE id = $2", [
+    amount,
+    accountId,
+  ]);
 }

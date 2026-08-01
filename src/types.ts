@@ -1,53 +1,53 @@
 export type Account = {
-    id: number;
-    name: string;
-    account_type: string;
-    balance: number;
-  };
-  
-  export type Transaction = {
-    id: number;
-    account_id: number;
-    date: string;
-    merchant: string;
-    category: string;
-    amount: number;
-    notes: string;
-    account_name?: string;
-    import_batch_id?: number | null;
-    imported_at?: string;
-  };
-  
-  export type Budget = {
-    id: number;
-    budget_month: string;
-    category: string;
-    monthly_limit: number;
-  };
+  id: number;
+  name: string;
+  account_type: string;
+  balance: number;
+};
 
-  export type Transfer = {
-    id: number;
-    from_account_id: number;
-    to_account_id: number;
-    date: string;
-    amount: number;
-    notes: string;
-    from_account_name?: string;
-    to_account_name?: string;
-  };
+export type Transaction = {
+  id: number;
+  account_id: number;
+  date: string;
+  merchant: string;
+  category: string;
+  amount: number;
+  notes: string;
+  account_name?: string;
+  import_batch_id?: number | null;
+  imported_at?: string;
+};
 
-  export type Goal = {
-    id: number;
-    name: string;
-    target_amount: number;
-    current_amount: number;
-    linked_account_id: number | null;
-    linked_account_name?: string;
-    linked_account_balance?: number;
-    notes: string;
-  };
+export type Budget = {
+  id: number;
+  budget_month: string;
+  category: string;
+  monthly_limit: number;
+};
 
-  export type RecurringTransaction = {
+export type Transfer = {
+  id: number;
+  from_account_id: number;
+  to_account_id: number;
+  date: string;
+  amount: number;
+  notes: string;
+  from_account_name?: string;
+  to_account_name?: string;
+};
+
+export type Goal = {
+  id: number;
+  name: string;
+  target_amount: number;
+  current_amount: number;
+  linked_account_id: number | null;
+  linked_account_name?: string;
+  linked_account_balance?: number;
+  notes: string;
+};
+
+export type RecurringTransaction = {
   id: number;
   account_id: number;
   account_name?: string;
@@ -61,22 +61,20 @@ export type Account = {
   auto_generate: number;
 };
 
-  export type ReportSummary = {
+export type ReportSummary = {
   income: number;
   expenses: number;
   savings: number;
   savingsRate: number;
   netCashFlow: number;
   categorySummary: Record<string, number>;
-  
-  };
+};
 
-
-  export type ImportBatch = {
+export type ImportBatch = {
   id: number;
   imported_at: string;
   transaction_count: number;
-  };
+};
 
 export type Fund = {
   id: number;
@@ -100,6 +98,28 @@ export type Debt = {
   minimum_payment: number;
   extra_payment: number;
   due_date: string | null;
+  notes: string;
+};
+
+export type DebtPayment = {
+  id: number;
+
+  debt_id: number;
+  debt_name?: string;
+
+  account_id: number;
+  account_name?: string;
+
+  transaction_id?: number | null;
+
+  payment_date: string;
+
+  payment_amount: number;
+
+  principal: number;
+
+  interest: number;
+
   notes: string;
 };
 
