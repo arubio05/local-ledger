@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import type { Debt } from "../types";
+import type { Account } from "../types";
 import { MasterDetailLayout } from "../components/layout/MasterDetailLayout";
 import { useModal } from "../components/modal/ModalContext";
 import { DebtPaymentDialog } from "../components/debt/DebtPaymentDialog";
@@ -58,6 +59,28 @@ type Props = {
 
   isSavingDebt?: boolean;
   deletingDebtId?: number | null;
+
+  accounts: Account[];
+
+  paymentAccountId: string;
+  setPaymentAccountId: (value: string) => void;
+
+  paymentAmount: string;
+  setPaymentAmount: (value: string) => void;
+
+  paymentDate: string;
+  setPaymentDate: (value: string) => void;
+
+  paymentNotes: string;
+  setPaymentNotes: (value: string) => void;
+
+  isRecordingPayment: boolean;
+
+  recordDebtPayment: () => Promise<void>;
+
+  paymentDebtId: number | null;
+  openDebtPayment: (debt: Debt) => void;
+  closeDebtPayment: () => void;
 };
 
 function formatMoney(value: number) {
@@ -114,11 +137,31 @@ export function DebtPage({
   resetDebtForm,
   isSavingDebt = false,
   deletingDebtId = null,
+
+  accounts,
+
+  paymentAccountId,
+  setPaymentAccountId,
+
+  paymentAmount,
+  setPaymentAmount,
+
+  paymentDate,
+  setPaymentDate,
+
+  paymentNotes,
+  setPaymentNotes,
+
+  isRecordingPayment,
+
+  recordDebtPayment,
+
+  paymentDebtId,
+  openDebtPayment,
+  closeDebtPayment,
 }: Props) {
   const { openConfirm } = useModal();
   const [search, setSearch] = useState("");
-  const [paymentDebt, setPaymentDebt] = useState<Debt | null>(null);
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   const totalDebt = useMemo(
     () => debts.reduce((sum, debt) => sum + debt.current_balance, 0),
@@ -167,16 +210,6 @@ export function DebtPage({
         .includes(normalizedSearch),
     );
   }, [debts, search]);
-
-  function openPaymentDialog(debt: Debt) {
-    setPaymentDebt(debt);
-    setIsPaymentDialogOpen(true);
-  }
-
-  function closePaymentDialog() {
-    setIsPaymentDialogOpen(false);
-    setPaymentDebt(null);
-  }
 
   function beginEdit(debt: Debt) {
     setEditingDebtId(debt.id);
@@ -479,7 +512,7 @@ export function DebtPage({
                             className="icon-button success"
                             aria-label={`Record payment for ${debt.name}`}
                             title="Record Payment"
-                            onClick={() => openPaymentDialog(debt)}
+                            onClick={() => openDebtPayment(debt)}
                           >
                             <HandCoins size={16} />
                           </button>
@@ -566,20 +599,20 @@ export function DebtPage({
         }
       />
       <DebtPaymentDialog
-        isOpen={isPaymentDialogOpen}
-        debt={paymentDebt}
-        accounts={[]}
-        paymentAccountId=""
-        setPaymentAccountId={() => undefined}
-        paymentAmount=""
-        setPaymentAmount={() => undefined}
-        paymentDate=""
-        setPaymentDate={() => undefined}
-        paymentNotes=""
-        setPaymentNotes={() => undefined}
-        isRecordingPayment={false}
-        onClose={closePaymentDialog}
-        onSubmit={() => undefined}
+        isOpen={paymentDebtId !== null}
+        debt={debts.find((debt) => debt.id === paymentDebtId) ?? null}
+        accounts={accounts}
+        paymentAccountId={paymentAccountId}
+        setPaymentAccountId={setPaymentAccountId}
+        paymentAmount={paymentAmount}
+        setPaymentAmount={setPaymentAmount}
+        paymentDate={paymentDate}
+        setPaymentDate={setPaymentDate}
+        paymentNotes={paymentNotes}
+        setPaymentNotes={setPaymentNotes}
+        isRecordingPayment={isRecordingPayment}
+        onClose={closeDebtPayment}
+        onSubmit={recordDebtPayment}
       />
     </>
   );

@@ -58,7 +58,6 @@ export function AppRouter({ page, app }: Props) {
           recurringTransactions={app.recurringHook.recurringTransactions}
         />
       )}
-
       {page === "accounts" && (
         <AccountsPage
           accounts={app.accountsHook.accounts}
@@ -82,7 +81,6 @@ export function AppRouter({ page, app }: Props) {
           resetAccountForm={app.accountsHook.resetAccountForm}
         />
       )}
-
       {page === "transactions" && (
         <TransactionsPage
           accounts={app.accountsHook.accounts}
@@ -142,7 +140,6 @@ export function AppRouter({ page, app }: Props) {
           clearTransactionFilters={app.transactionsHook.clearTransactionFilters}
         />
       )}
-
       {page === "transfers" && (
         <TransfersPage
           accounts={app.accountsHook.accounts}
@@ -176,7 +173,6 @@ export function AppRouter({ page, app }: Props) {
           deletingTransferId={app.transfersHook.deletingTransferId}
         />
       )}
-
       {page === "budget" && (
         <BudgetPage
           budgetGroups={app.zeroBudgetHook.budgetGroups}
@@ -207,7 +203,6 @@ export function AppRouter({ page, app }: Props) {
           startTransactionFromBudget={app.startTransactionFromBudget}
         />
       )}
-
       {page === "goals" && (
         <GoalsPage
           goals={app.goalsHook.goals}
@@ -232,7 +227,6 @@ export function AppRouter({ page, app }: Props) {
           deletingGoalId={app.goalsHook.deletingGoalId}
         />
       )}
-
       {page === "funds" && (
         <FundsPage
           accounts={app.accountsHook.accounts}
@@ -261,7 +255,6 @@ export function AppRouter({ page, app }: Props) {
           deletingFundId={app.fundsHook.deletingFundId}
         />
       )}
-
       {page === "recurring" && (
         <RecurringPage
           accounts={app.accountsHook.accounts}
@@ -302,7 +295,6 @@ export function AppRouter({ page, app }: Props) {
           setRecurringAutoGenerate={app.recurringHook.setRecurringAutoGenerate}
         />
       )}
-
       {page === "debt" && (
         <DebtPage
           debts={app.debtsHook.debts}
@@ -330,9 +322,25 @@ export function AppRouter({ page, app }: Props) {
           resetDebtForm={app.debtsHook.resetDebtForm}
           isSavingDebt={app.debtsHook.isSavingDebt}
           deletingDebtId={app.debtsHook.deletingDebtId}
+          accounts={app.accountsHook.accounts}
+          paymentAccountId={app.debtsHook.paymentAccountId}
+          setPaymentAccountId={app.debtsHook.setPaymentAccountId}
+          paymentAmount={app.debtsHook.paymentAmount}
+          setPaymentAmount={app.debtsHook.setPaymentAmount}
+          paymentDate={app.debtsHook.paymentDate}
+          setPaymentDate={app.debtsHook.setPaymentDate}
+          paymentNotes={app.debtsHook.paymentNotes}
+          setPaymentNotes={app.debtsHook.setPaymentNotes}
+          isRecordingPayment={app.debtsHook.isRecordingPayment}
+          recordDebtPayment={() =>
+            app.debtsHook.recordDebtPayment(app.reloadAfterTransactionChange)
+          }
+          paymentDebtId={app.debtsHook.paymentDebtId}
+          openDebtPayment={app.debtsHook.openDebtPayment}
+          closeDebtPayment={app.debtsHook.closeDebtPayment}
         />
       )}
-
+      l
       {page === "reports" && (
         <ReportsPage
           transactions={app.transactionsHook.transactions}
@@ -342,7 +350,6 @@ export function AppRouter({ page, app }: Props) {
           setSelectedMonth={app.setSelectedMonth}
         />
       )}
-
       {page === "import" && (
         <ImportPage
           accounts={app.accountsHook.accounts}
@@ -363,7 +370,6 @@ export function AppRouter({ page, app }: Props) {
           }
         />
       )}
-
       {page === "settings" && (
         <SettingsPage
           accounts={app.accountsHook.accounts}

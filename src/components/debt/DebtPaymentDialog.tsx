@@ -1,3 +1,5 @@
+import { createPortal } from "react-dom";
+
 import { useMemo } from "react";
 import {
   CalendarDays,
@@ -135,7 +137,7 @@ export function DebtPaymentDialog({
     void onSubmit();
   }
 
-  return (
+  return createPortal(
     <div
       className="debt-payment-backdrop"
       role="presentation"
@@ -319,6 +321,7 @@ export function DebtPaymentDialog({
           </footer>
         </form>
       </section>
-    </div>
+    </div>,
+    document.body,
   );
 }

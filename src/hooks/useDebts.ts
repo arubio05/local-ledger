@@ -8,6 +8,8 @@ import {
   updateDebtById,
 } from "../services/debtService";
 
+import { recordDebtPaymentInDatabase } from "../services/debtPaymentService";
+
 import { useToast } from "../components/toast/ToastContext";
 
 function getErrorMessage(error: unknown) {
@@ -70,23 +72,23 @@ export function useDebts() {
   }
 
   function openDebtPayment(debt: Debt) {
-    setPaymentDebtId(debt.id);
-    setPaymentAccountId("");
-
     const suggestedPayment = debt.minimum_payment + debt.extra_payment;
 
+    setPaymentDebtId(debt.id);
+    setPaymentAccountId("");
     setPaymentAmount(
       suggestedPayment > 0
         ? String(Math.min(suggestedPayment, debt.current_balance))
         : "",
     );
-
     setPaymentDate(getLocalDate());
     setPaymentNotes("");
   }
 
   function closeDebtPayment() {
-    if (isRecordingPayment) return;
+    if (isRecordingPayment) {
+      return;
+    }
 
     resetDebtPaymentForm();
   }
@@ -310,6 +312,111 @@ export function useDebts() {
     }
   }
 
+  async function recordDebtPayment(
+    afterSave?: () => Promise<void>,
+  ): Promise<void> {
+    if (isRecordingPayment || isSavingDebt || deletingDebtId !== null) {
+      return;
+    }
+
+    if (!paymentDebtId) {
+      toast.warning(
+        "No debt selected",
+        "Choose a debt before recording a payment.",
+      );
+      return;
+    }
+
+    const debt = debts.find((item) => item.id === paymentDebtId);
+
+    if (!debt) {
+      toast.error(
+        "Debt not found",
+        "The selected debt is no longer available.",
+      );
+      return;
+    }
+
+    const accountId = Number(paymentAccountId);
+    const amount = Number(paymentAmount);
+
+    if (!paymentAccountId || !Number.isInteger(accountId) || accountId <= 0) {
+      toast.warning(
+        "Payment account required",
+        "Choose the account used to make this payment.",
+      );
+      return;
+    }
+
+    if (!paymentDate) {
+      toast.warning("Payment date required", "Select the date of the payment.");
+      return;
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.warning(
+        "Invalid payment amount",
+        "Payment amount must be greater than zero.",
+      );
+      return;
+    }
+
+    if (amount > debt.current_balance) {
+      toast.warning(
+        "Payment exceeds balance",
+        `The payment cannot exceed the remaining balance of $${debt.current_balance.toFixed(
+          2,
+        )}.`,
+      );
+      return;
+    }
+
+    const toastId = toast.loading(
+      "Recording debt payment",
+      `Applying $${amount.toFixed(2)} to ${debt.name}…`,
+    );
+
+    try {
+      setIsRecordingPayment(true);
+
+      const result = await recordDebtPaymentInDatabase(
+        debt.id,
+        accountId,
+        paymentDate,
+        amount,
+        paymentNotes.trim(),
+      );
+
+      await loadDebts(false);
+
+      if (typeof afterSave === "function") {
+        await afterSave();
+      }
+
+      resetDebtPaymentForm();
+
+      toast.updateToast(toastId, {
+        type: "success",
+        title: "Payment recorded",
+        message: `${debt.name} now has a remaining balance of $${result.newDebtBalance.toFixed(
+          2,
+        )}.`,
+        duration: 4000,
+      });
+    } catch (error) {
+      console.error("Record debt payment failed:", error);
+
+      toast.updateToast(toastId, {
+        type: "error",
+        title: "Unable to record payment",
+        message: getErrorMessage(error),
+        duration: 6000,
+      });
+    } finally {
+      setIsRecordingPayment(false);
+    }
+  }
+
   async function deleteDebt(id: number, afterSave?: () => Promise<void>) {
     if (deletingDebtId === id || isSavingDebt || isRecordingPayment) {
       return;
@@ -419,6 +526,7 @@ export function useDebts() {
     loadDebts,
     addDebt,
     updateDebt,
+    recordDebtPayment,
     deleteDebt,
   };
 }
