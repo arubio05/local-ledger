@@ -17,9 +17,15 @@ import type { Page } from "../../types/navigation";
 type Props = {
   page: Page;
   app: any;
+
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) => Promise<boolean>;
 };
 
-export function AppRouter({ page, app }: Props) {
+export function AppRouter({ page, app, changePassword }: Props) {
   if (app.showOnboarding) {
     return (
       <section className="content onboarding-content">
@@ -388,6 +394,7 @@ export function AppRouter({ page, app }: Props) {
           createAutomaticBackupNow={
             app.automaticBackupHook.createAutomaticBackupNow
           }
+          changePassword={changePassword}
         />
       )}
     </section>

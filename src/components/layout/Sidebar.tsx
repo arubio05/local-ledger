@@ -10,16 +10,20 @@ import {
   Repeat,
   CreditCard,
   Settings,
+  LogOut,
 } from "lucide-react";
 
 import type { Page } from "../../types/navigation";
+import { useModal } from "../modal/ModalContext";
 
 type Props = {
   page: Page;
-  setPage: (page: Page) => void;
+  setPage: React.Dispatch<React.SetStateAction<Page>>;
+  logout: () => void;
 };
 
-export function Sidebar({ page, setPage }: Props) {
+export function Sidebar({ page, setPage, logout }: Props) {
+  const { openConfirm } = useModal();
   return (
     <aside className="sidebar">
       {/* =======================
@@ -203,6 +207,26 @@ export function Sidebar({ page, setPage }: Props) {
           <strong>Project FMJ</strong>
           <span>Dedicated to Fe & MJ</span>
         </div>
+      </div>
+
+      <div className="sidebar-logout-container">
+        <button
+          type="button"
+          className="sidebar-navigation-button sidebar-logout-button"
+          onClick={() =>
+            openConfirm({
+              title: "Log out",
+              message:
+                "You will need to enter your password again to access Project FMJ.",
+              confirmText: "Log out",
+              danger: true,
+              onConfirm: logout,
+            })
+          }
+        >
+          <LogOut size={18} className="sidebar-navigation-icon" />
+          Log out
+        </button>
       </div>
     </aside>
   );

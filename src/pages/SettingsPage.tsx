@@ -10,6 +10,10 @@ import {
   Settings,
   ShieldCheck,
   Upload,
+  Eye,
+  EyeOff,
+  KeyRound,
+  LockKeyhole,
 } from "lucide-react";
 
 import type { Account } from "../types";
@@ -41,6 +45,12 @@ type Props = {
   isCreatingAutomaticBackup: boolean;
 
   createAutomaticBackupNow: () => Promise<string | null>;
+
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string,
+  ) => Promise<boolean>;
 };
 
 type BackupStatus = {
@@ -66,6 +76,7 @@ export function SettingsPage({
   automaticBackupStatus,
   isCreatingAutomaticBackup,
   createAutomaticBackupNow,
+  changePassword,
 }: Props) {
   const { openConfirm } = useModal();
   const toast = useToast();
@@ -73,6 +84,16 @@ export function SettingsPage({
   const [isBackingUp, setIsBackingUp] = useState(false);
   const [isRestoring, setIsRestoring] = useState(false);
   const [backupStatus, setBackupStatus] = useState<BackupStatus>(null);
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   async function handleBackup() {
     if (isBackingUp) return;
@@ -192,6 +213,33 @@ export function SettingsPage({
     });
   }
 
+  async function handleChangePassword() {
+    if (isChangingPassword) {
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+
+      const success = await changePassword(
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      );
+
+      if (!success) {
+        return;
+      }
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  }
   return (
     <>
       <header className="page-header settings-page-header">
@@ -207,6 +255,112 @@ export function SettingsPage({
           <Settings size={22} />
         </div>
       </header>
+
+      <section className="panel settings-section">
+        <header className="settings-section-header">
+          <div className="settings-section-icon security">
+            <ShieldCheck size={20} />
+          </div>
+
+          <div>
+            <h3>Security</h3>
+            <p>Change the local password used to unlock Project FMJ.</p>
+          </div>
+        </header>
+
+        <form
+          className="settings-security-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleChangePassword();
+          }}
+        >
+          <label className="settings-security-field">
+            <span>Current password</span>
+
+            <div className="settings-password-input">
+              <LockKeyhole size={17} />
+
+              <input
+                type={showCurrentPassword ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="Enter your current password"
+                value={currentPassword}
+                disabled={isChangingPassword}
+                onChange={(event) => setCurrentPassword(event.target.value)}
+              />
+
+              <button
+                type="button"
+                aria-label={
+                  showCurrentPassword
+                    ? "Hide current password"
+                    : "Show current password"
+                }
+                disabled={isChangingPassword}
+                onClick={() => setShowCurrentPassword((current) => !current)}
+              >
+                {showCurrentPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </div>
+          </label>
+
+          <div className="settings-security-row">
+            <label className="settings-security-field">
+              <span>New password</span>
+
+              <div className="settings-password-input">
+                <KeyRound size={17} />
+
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="At least 6 characters"
+                  value={newPassword}
+                  disabled={isChangingPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                />
+
+                <button
+                  type="button"
+                  aria-label={
+                    showNewPassword ? "Hide new password" : "Show new password"
+                  }
+                  disabled={isChangingPassword}
+                  onClick={() => setShowNewPassword((current) => !current)}
+                >
+                  {showNewPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+                </button>
+              </div>
+            </label>
+
+            <label className="settings-security-field">
+              <span>Confirm new password</span>
+
+              <div className="settings-password-input">
+                <KeyRound size={17} />
+
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Enter it again"
+                  value={confirmPassword}
+                  disabled={isChangingPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                />
+              </div>
+            </label>
+          </div>
+
+          <div className="settings-security-actions">
+            <button type="submit" disabled={isChangingPassword}>
+              <KeyRound size={16} />
+
+              {isChangingPassword ? "Changing password…" : "Change password"}
+            </button>
+          </div>
+        </form>
+      </section>
 
       <section className="panel settings-section">
         <header className="settings-section-header">
